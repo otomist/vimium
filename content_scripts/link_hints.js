@@ -484,6 +484,52 @@ class LinkHintsMode {
       // Note that Vimium's CSS is user-customizable. We're adding the "vimiumHintMarker" class here
       // for users to customize. See further comments about this in vimium.css.
       el.className = "vimium-reset internal-vimium-hint-marker vimiumHintMarker";
+
+      // Classify the element so we can style different hint types differently (buttons, links,
+      // external links). We only attach these classes for local markers actually rendered here.
+      try {
+        const target = localHint.element;
+        if (target) {
+          const tag = target.tagName?.toLowerCase?.() || "";
+          const role = target.getAttribute?.("role")?.toLowerCase?.();
+          let typeClass = null;
+
+          // Helper to decide if an <a> is external (different domain).
+          const classifyAnchor = () => {
+            if (!target.href) return "vimium-hint-type-link"; // No href => treat as normal link.
+            let linkHostname;
+            try {
+              linkHostname = new URL(target.href, document.baseURI).hostname || "";
+            } catch (_) {
+              linkHostname = ""; // Malformed; treat as same-domain link.
+            }
+            const norm = (h) => h.replace(/^www\./, "");
+            if (linkHostname && norm(linkHostname) && norm(linkHostname) !== norm(location.hostname || "")) {
+              return "vimium-hint-type-external";
+            }
+            return "vimium-hint-type-link";
+          };
+
+          if (
+            tag === "button" ||
+            (tag === "input" && ["button", "submit", "reset"].includes((target.getAttribute("type") || "").toLowerCase())) ||
+            role === "button"
+          ) {
+            typeClass = "vimium-hint-type-button";
+          } else if (tag === "a" || role === "link") {
+            typeClass = classifyAnchor();
+          } else if (target.href && tag !== "area") { // Generic clickable with href (e.g. <div role=link>
+            typeClass = classifyAnchor();
+          }
+
+            // Apply class if determined.
+          if (typeClass) {
+            el.classList.add(typeClass);
+          }
+        }
+      } catch (_) {
+        // Swallow any classification errors; hint rendering must not break.
+      }
       Object.assign(marker, {
         element: el,
         localHint,
