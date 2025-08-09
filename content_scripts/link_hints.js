@@ -186,6 +186,29 @@ const COPY_SPAN_BLOCK = {
   customSelectors: ["span"],
   linkActivator: copyElementTextActivator("span"),
 };
+const COPY_ANCHOR_BLOCK = {
+  name: "alink",
+  indicator: "Copy link text",
+  customSelectors: ["a"],
+  linkActivator: copyElementTextActivator("link"),
+};
+const COPY_ANY_BLOCK = {
+  name: "any",
+  indicator: "Copy element",
+  // Union of existing selector groups (anchor, span, paragraph, code family).
+  customSelectors: [
+    "a",
+    "span",
+    "p",
+    "pre",
+    "code",
+    ".hljs",
+    "div.highlight pre",
+    "div.highlight code",
+    "[data-code-block]",
+  ],
+  linkActivator: copyElementTextActivator("element"),
+};
 
 const availableModes = [
   OPEN_IN_CURRENT_TAB,
@@ -201,6 +224,8 @@ const availableModes = [
   COPY_CODE_BLOCK,
   COPY_PARAGRAPH_BLOCK,
   COPY_SPAN_BLOCK,
+  COPY_ANCHOR_BLOCK,
+  COPY_ANY_BLOCK,
 ];
 
 const HintCoordinator = {
@@ -1646,6 +1671,8 @@ Object.assign(globalThis, {
   COPY_CODE_BLOCK,
   COPY_PARAGRAPH_BLOCK,
   COPY_SPAN_BLOCK,
+  COPY_ANCHOR_BLOCK,
+  COPY_ANY_BLOCK,
 });
 // Generic selector-based helper for custom copy modes.
 LocalHints.getHintsForSelectors = function (selectors) {

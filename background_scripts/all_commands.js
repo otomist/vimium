@@ -250,6 +250,20 @@ const allCommands = [
     advanced: true,
     noRepeat: true,
   },
+  {
+    name: "LinkHints.activateModeToCopyAnchor",
+    desc: "Copy an anchor's text to the clipboard",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
+  {
+    name: "LinkHints.activateModeToCopyAny",
+    desc: "Copy text from various element types (a, p, span, code, pre)",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
 
   {
     name: "goPrevious",
