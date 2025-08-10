@@ -1685,6 +1685,7 @@ LocalHints.getHintsForSelectors = function (selectors) {
   }
   elements = elements.filter((el) => !elements.some((other) => (other !== el) && other.contains(el)));
   const hints = [];
+  const { top: viewportTop, left: viewportLeft } = DomUtils.getViewportTopLeft();
   for (const el of elements) {
     const rect = DomUtils.getVisibleClientRect(el, true);
     if (!rect) continue;
@@ -1693,6 +1694,9 @@ LocalHints.getHintsForSelectors = function (selectors) {
     if (!text) continue;
     let caption = text.split(/\n/)[0];
     if (caption.length > 80) caption = caption.slice(0, 77) + "...";
+    // Adjust to document coordinates (LinkHints expects rect relative to full document, not viewport).
+    rect.top += viewportTop;
+    rect.left += viewportLeft;
     hints.push(new LocalHint({ element: el, rect, linkText: caption, showLinkText: true }));
   }
   return hints;
