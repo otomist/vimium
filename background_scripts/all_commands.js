@@ -270,6 +270,13 @@ const allCommands = [
     group: "navigation",
     advanced: true,
   },
+
+  {
+    name: "LinkHints.activateModeToCopyTextH",
+    desc: "Copy text from heading elements",
+    group: "navigation",
+    advanced: true,
+  },
   {
     name: "goPrevious",
     desc: "Follow the link labeled previous or <",

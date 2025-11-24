@@ -160,6 +160,7 @@ const COPY_TEXT_CODE = createCopyTextMode("code");
 const COPY_TEXT_DIV = createCopyTextMode("div");
 const COPY_TEXT_P = createCopyTextMode("p");
 const COPY_TEXT_SPAN = createCopyTextMode("span");
+const COPY_TEXT_H = createCopyTextMode("h");
 
 const HOVER_LINK = {
   name: "hover",
@@ -193,6 +194,7 @@ const availableModes = [
   COPY_TEXT_P,
   COPY_TEXT_A,
   COPY_TEXT_ANY,
+  COPY_TEXT_H,
 ];
 
 const HintCoordinator = {
@@ -415,6 +417,9 @@ const LinkHints = {
   },
   activateModeToCopyTextAny(count) {
     this.activateMode(count, { mode: COPY_TEXT_ANY });
+  },
+  activateModeToCopyTextH(count) {
+    this.activateMode(count, { mode: COPY_TEXT_H });
   },
 };
 
@@ -1407,6 +1412,27 @@ const LocalHints = {
     return element;
   },
 
+  // Returns true if the element matches the filterByTag criteria.
+  // - filterByTag can be:
+  //   - null/undefined: matches all elements
+  //   - "*": matches all elements
+  //   - "h": matches h1-h6 heading tags
+  //   - any other string: matches that specific tag name
+  matchesTagFilter(element, filterByTag) {
+    if (!filterByTag || filterByTag === "*") {
+      return true;
+    }
+    
+    const tagName = element.tagName.toLowerCase();
+    
+    // Special case: "h" matches h1-h6
+    if (filterByTag === "h") {
+      return ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tagName);
+    }
+    
+    return tagName === filterByTag;
+  },
+
   // Returns an array of LocalHints representing all clickable elements that are not hidden and are
   // in the current viewport, along with rectangles at which (parts of) the elements are displayed.
   // In the process, we try to find rects where elements do not overlap so that link hints are
@@ -1443,8 +1469,8 @@ const LocalHints = {
     // below.
     for (const element of Array.from(elements)) {
       if (!requireHref || !!element.href) {
-        // Filter by tag name if specified (except for "*" which matches all)
-        if (filterByTag && filterByTag !== "*" && element.tagName.toLowerCase() !== filterByTag) {
+        // Filter by tag name if specified
+        if (!this.matchesTagFilter(element, filterByTag)) {
           continue;
         }
         const hints = isCopyTextMode

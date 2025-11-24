@@ -360,6 +360,7 @@ const NormalModeCommands = {
   "LinkHints.activateModeToCopyTextP": LinkHints.activateModeToCopyTextP.bind(LinkHints),
   "LinkHints.activateModeToCopyTextA": LinkHints.activateModeToCopyTextA.bind(LinkHints),
   "LinkHints.activateModeToCopyTextAny": LinkHints.activateModeToCopyTextAny.bind(LinkHints),
+  "LinkHints.activateModeToCopyTextH": LinkHints.activateModeToCopyTextH.bind(LinkHints),
 
   "Vomnibar.activate": Vomnibar.activate.bind(Vomnibar),
   "Vomnibar.activateInNewTab": Vomnibar.activateInNewTab.bind(Vomnibar),

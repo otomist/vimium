@@ -445,6 +445,7 @@ const defaultKeyMappings = {
   "cp": "LinkHints.activateModeToCopyTextP",
   "ca": "LinkHints.activateModeToCopyTextA",
   "c*": "LinkHints.activateModeToCopyTextAny",
+  "ch": "LinkHints.activateModeToCopyTextH",
 
   // Using find
   "/": "enterFindMode",
