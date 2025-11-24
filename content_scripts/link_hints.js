@@ -131,6 +131,36 @@ const COPY_LINK_TEXT = {
     }
   },
 };
+
+// Copy textContent from elements of a given tag name.
+const createCopyTextMode = (tagName) => {
+  const displayName = tagName === "*" ? "all elements" : `<${tagName}> elements`;
+  return {
+    name: `copy-text-${tagName}`,
+    indicator: `Copy text from ${displayName}`,
+    tagName,
+    isCopyTextMode: true,
+    linkActivator(element) {
+      let text = element.textContent;
+      if (text.length > 0) {
+        HUD.copyToClipboard(text);
+        if (28 < text.length) text = text.slice(0, 26) + "....";
+        HUD.show(`Yanked ${text}`, 2000);
+      } else {
+        HUD.show("No text to yank.", 2000);
+      }
+    },
+  };
+};
+
+// Define copy text modes for common tags
+const COPY_TEXT_ANY = createCopyTextMode("*");
+const COPY_TEXT_A = createCopyTextMode("a");
+const COPY_TEXT_CODE = createCopyTextMode("code");
+const COPY_TEXT_DIV = createCopyTextMode("div");
+const COPY_TEXT_P = createCopyTextMode("p");
+const COPY_TEXT_SPAN = createCopyTextMode("span");
+
 const HOVER_LINK = {
   name: "hover",
   indicator: "Hover link",
@@ -157,6 +187,12 @@ const availableModes = [
   COPY_LINK_TEXT,
   HOVER_LINK,
   FOCUS_LINK,
+  COPY_TEXT_SPAN,
+  COPY_TEXT_CODE,
+  COPY_TEXT_DIV,
+  COPY_TEXT_P,
+  COPY_TEXT_A,
+  COPY_TEXT_ANY,
 ];
 
 const HintCoordinator = {
@@ -222,14 +258,21 @@ const HintCoordinator = {
   getHintDescriptors({ modeIndex, requestedByHelpDialog }, _sender) {
     if (!DomUtils.isReady() || DomUtils.windowIsTooSmall()) return [];
 
-    const requireHref = [COPY_LINK_URL, OPEN_INCOGNITO].includes(availableModes[modeIndex]);
+    const mode = availableModes[modeIndex];
+    if (!mode) {
+      console.error(`Invalid modeIndex: ${modeIndex}. Available modes: ${availableModes.length}`);
+      return [];
+    }
+    const requireHref = [COPY_LINK_URL, OPEN_INCOGNITO].includes(mode);
+    const filterByTag = mode.isCopyTextMode ? mode.tagName : null;
+    const isCopyTextMode = mode.isCopyTextMode || false;
     // If link hints is launched within the help dialog, then we only offer hints from that frame.
     // This improves the usability of the help dialog on the options page (particularly for
     // selecting command names).
     if (requestedByHelpDialog && !globalThis.isVimiumHelpDialog) {
       this.localHints = [];
     } else {
-      this.localHints = LocalHints.getLocalHints(requireHref);
+      this.localHints = LocalHints.getLocalHints(requireHref, filterByTag, isCopyTextMode);
     }
     this.localHintDescriptors = this.localHints.map(({ linkText }, localIndex) => (
       new HintDescriptor({
@@ -353,6 +396,25 @@ const LinkHints = {
   },
   activateModeToDownloadLink(count) {
     this.activateMode(count, { mode: DOWNLOAD_LINK_URL });
+  },
+  // Copy text modes for different tag types
+  activateModeToCopyTextSpan(count) {
+    this.activateMode(count, { mode: COPY_TEXT_SPAN });
+  },
+  activateModeToCopyTextCode(count) {
+    this.activateMode(count, { mode: COPY_TEXT_CODE });
+  },
+  activateModeToCopyTextDiv(count) {
+    this.activateMode(count, { mode: COPY_TEXT_DIV });
+  },
+  activateModeToCopyTextP(count) {
+    this.activateMode(count, { mode: COPY_TEXT_P });
+  },
+  activateModeToCopyTextA(count) {
+    this.activateMode(count, { mode: COPY_TEXT_A });
+  },
+  activateModeToCopyTextAny(count) {
+    this.activateMode(count, { mode: COPY_TEXT_ANY });
   },
 };
 
@@ -1285,6 +1347,42 @@ const LocalHints = {
     return hints;
   },
 
+  // Similar to getLocalHintsForElement, but for copy text mode. Returns hints for any element
+  // that has visible text content, regardless of whether it's clickable.
+  getLocalHintsForCopyText(element) {
+    const hints = [];
+
+    if (!element || !element.tagName) {
+      return hints;
+    }
+
+    const tagName = (element.tagName.toLowerCase?.() || element.tagName.toLowerCase?.call(element) || "").toLowerCase();
+
+    // Skip certain elements that shouldn't have hints
+    if (["script", "style", "noscript", "meta", "head"].includes(tagName)) {
+      return hints;
+    }
+
+    // Get the text content and trim it
+    const text = (element.textContent || "").trim();
+
+    // Only create a hint if the element has text content
+    if (text.length > 0) {
+      // Check if element is visible in the viewport
+      const clientRect = DomUtils.getVisibleClientRect(element, true);
+      if (clientRect !== null) {
+        const hint = new LocalHint({
+          element,
+          rect: clientRect,
+          linkText: text,
+        });
+        hints.push(hint);
+      }
+    }
+
+    return hints;
+  },
+
   //
   // Returns element at a given (x,y) with an optional root element.
   // If the returned element is a shadow root, descend into that shadow root recursively until we
@@ -1316,7 +1414,9 @@ const LocalHints = {
   // rects for the whole element.
   // - requireHref: true if the hintable element must have an href, because an href is required for
   //   commands like "LinkHints.activateModeToCopyLinkUrl".
-  getLocalHints(requireHref) {
+  // - filterByTag: if provided, only return elements with this tag name (or all elements if "*")
+  // - isCopyTextMode: if true, include non-clickable elements that have text content
+  getLocalHints(requireHref, filterByTag, isCopyTextMode) {
     // We need documentElement to be ready in order to find links.
     if (!document.documentElement) return [];
 
@@ -1343,7 +1443,13 @@ const LocalHints = {
     // below.
     for (const element of Array.from(elements)) {
       if (!requireHref || !!element.href) {
-        const hints = this.getLocalHintsForElement(element);
+        // Filter by tag name if specified (except for "*" which matches all)
+        if (filterByTag && filterByTag !== "*" && element.tagName.toLowerCase() !== filterByTag) {
+          continue;
+        }
+        const hints = isCopyTextMode
+          ? this.getLocalHintsForCopyText(element)
+          : this.getLocalHintsForElement(element);
         localHints.push(...hints);
       }
     }

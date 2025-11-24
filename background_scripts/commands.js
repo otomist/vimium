@@ -438,6 +438,14 @@ const defaultKeyMappings = {
   "<a-f>": "LinkHints.activateModeWithQueue",
   "yf": "LinkHints.activateModeToCopyLinkUrl",
 
+  // Copy text from elements
+  "cs": "LinkHints.activateModeToCopyTextSpan",
+  "cc": "LinkHints.activateModeToCopyTextCode",
+  "cd": "LinkHints.activateModeToCopyTextDiv",
+  "cp": "LinkHints.activateModeToCopyTextP",
+  "ca": "LinkHints.activateModeToCopyTextA",
+  "c*": "LinkHints.activateModeToCopyTextAny",
+
   // Using find
   "/": "enterFindMode",
   "n": "performFind",

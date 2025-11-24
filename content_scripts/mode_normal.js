@@ -354,6 +354,13 @@ const NormalModeCommands = {
   "LinkHints.activateModeToDownloadLink": LinkHints.activateModeToDownloadLink.bind(LinkHints),
   "LinkHints.activateModeToCopyLinkUrl": LinkHints.activateModeToCopyLinkUrl.bind(LinkHints),
 
+  "LinkHints.activateModeToCopyTextSpan": LinkHints.activateModeToCopyTextSpan.bind(LinkHints),
+  "LinkHints.activateModeToCopyTextCode": LinkHints.activateModeToCopyTextCode.bind(LinkHints),
+  "LinkHints.activateModeToCopyTextDiv": LinkHints.activateModeToCopyTextDiv.bind(LinkHints),
+  "LinkHints.activateModeToCopyTextP": LinkHints.activateModeToCopyTextP.bind(LinkHints),
+  "LinkHints.activateModeToCopyTextA": LinkHints.activateModeToCopyTextA.bind(LinkHints),
+  "LinkHints.activateModeToCopyTextAny": LinkHints.activateModeToCopyTextAny.bind(LinkHints),
+
   "Vomnibar.activate": Vomnibar.activate.bind(Vomnibar),
   "Vomnibar.activateInNewTab": Vomnibar.activateInNewTab.bind(Vomnibar),
   "Vomnibar.activateTabSelection": Vomnibar.activateTabSelection.bind(Vomnibar),
