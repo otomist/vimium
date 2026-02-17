@@ -118,6 +118,28 @@ div.internal-vimium-hint-marker {
   z-index: 2147483647;
 }
 
+/* Hint type variants: these classes are added dynamically in link_hints.js.
+ * We keep them additive so user-defined CSS can override them easily. */
+.internal-vimium-hint-marker.vimium-hint-type-button {
+  background: linear-gradient(to bottom, #d0ebff 0%, #74c0fc 100%);
+  border-color: #339af0;
+}
+.internal-vimium-hint-marker.vimium-hint-type-link {
+  background: linear-gradient(to bottom, #e6ffe6 0%, #9bde83 100%);
+  border-color: #4caf50;
+}
+.internal-vimium-hint-marker.vimium-hint-type-external {
+  background: linear-gradient(to bottom, #ffe6f1 0%, #ff87b5 100%);
+  border-color: #ff3d7f;
+}
+
+/* Active state tweaks keep foreground legible */
+.internal-vimium-hint-marker.vimium-hint-type-external span,
+.internal-vimium-hint-marker.vimium-hint-type-button span,
+.internal-vimium-hint-marker.vimium-hint-type-link span {
+  color: #302505;
+}
+
 div.internal-vimium-hint-marker span {
   color: #302505;
   font-family: Helvetica, Arial, sans-serif;

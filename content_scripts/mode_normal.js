@@ -353,6 +353,12 @@ const NormalModeCommands = {
   "LinkHints.activateModeToOpenIncognito": LinkHints.activateModeToOpenIncognito.bind(LinkHints),
   "LinkHints.activateModeToDownloadLink": LinkHints.activateModeToDownloadLink.bind(LinkHints),
   "LinkHints.activateModeToCopyLinkUrl": LinkHints.activateModeToCopyLinkUrl.bind(LinkHints),
+  // Custom: copy element text via hinting (prefix 'c').
+  "LinkHints.activateModeToCopyCodeBlock": function () { HintCoordinator.prepareToActivateMode(COPY_CODE_BLOCK, function () {}); },
+  "LinkHints.activateModeToCopyParagraph": function () { HintCoordinator.prepareToActivateMode(COPY_PARAGRAPH_BLOCK, function () {}); },
+  "LinkHints.activateModeToCopySpan": function () { HintCoordinator.prepareToActivateMode(COPY_SPAN_BLOCK, function () {}); },
+  "LinkHints.activateModeToCopyAnchor": function () { HintCoordinator.prepareToActivateMode(COPY_ANCHOR_BLOCK, function () {}); },
+  "LinkHints.activateModeToCopyAny": function () { HintCoordinator.prepareToActivateMode(COPY_ANY_BLOCK, function () {}); },
 
   "Vomnibar.activate": Vomnibar.activate.bind(Vomnibar),
   "Vomnibar.activateInNewTab": Vomnibar.activateInNewTab.bind(Vomnibar),

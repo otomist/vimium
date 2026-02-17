@@ -436,6 +436,13 @@ const defaultKeyMappings = {
   "v": "enterVisualMode",
   "V": "enterVisualLineMode",
 
+  // Copy element text (prefix c): cc (code), cp (paragraph), cs (span), ca (anchor), c* (any)
+  "cc": "LinkHints.activateModeToCopyCodeBlock",
+  "cp": "LinkHints.activateModeToCopyParagraph",
+  "cs": "LinkHints.activateModeToCopySpan",
+  "ca": "LinkHints.activateModeToCopyAnchor",
+  "c*": "LinkHints.activateModeToCopyAny",
+
   // Link hints
   "f": "LinkHints.activateMode",
   "F": "LinkHints.activateModeToOpenInNewTab",

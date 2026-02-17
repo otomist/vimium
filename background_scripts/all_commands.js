@@ -230,6 +230,42 @@ const allCommands = [
   },
 
   {
+    name: "LinkHints.activateModeToCopyCodeBlock",
+    desc: "Copy a code block's text to the clipboard",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
+  {
+    name: "LinkHints.activateModeToCopyParagraph",
+    desc: "Copy a paragraph's text to the clipboard",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
+  {
+    name: "LinkHints.activateModeToCopySpan",
+    desc: "Copy a span's text to the clipboard",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
+  {
+    name: "LinkHints.activateModeToCopyAnchor",
+    desc: "Copy an anchor's text to the clipboard",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
+  {
+    name: "LinkHints.activateModeToCopyAny",
+    desc: "Copy text from various element types (a, p, span, code, pre)",
+    group: "navigation",
+    advanced: true,
+    noRepeat: true,
+  },
+
+  {
     name: "goPrevious",
     desc: "Follow the link labeled previous or <",
     group: "navigation",

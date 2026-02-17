@@ -146,6 +146,70 @@ const FOCUS_LINK = {
   },
 };
 
+// Generic copy modes (selector-based). Each provides customSelectors array for hint gathering.
+function copyElementTextActivator(label) {
+  return function (el) {
+    if (!el) return;
+    let text = el.innerText || el.textContent || "";
+    if (!text.trim()) {
+      HUD.show(`No ${label} text to yank.`, 1500);
+      return;
+    }
+    HUD.copyToClipboard(text);
+    const preview = text.replace(/\s+/g, " ").trim().slice(0, 40);
+    HUD.show(`Yanked ${label}: ${preview}${text.length > 40 ? "..." : ""}`, 2000);
+  };
+}
+
+const COPY_CODE_BLOCK = {
+  name: "code",
+  indicator: "Copy code block",
+  customSelectors: [
+    "pre",
+    "code",
+    ".hljs",
+    "div.highlight pre",
+    "div.highlight code",
+    "[data-code-block]",
+  ],
+  linkActivator: copyElementTextActivator("code"),
+};
+const COPY_PARAGRAPH_BLOCK = {
+  name: "para",
+  indicator: "Copy paragraph",
+  customSelectors: ["p"],
+  linkActivator: copyElementTextActivator("paragraph"),
+};
+const COPY_SPAN_BLOCK = {
+  name: "span",
+  indicator: "Copy span",
+  customSelectors: ["span"],
+  linkActivator: copyElementTextActivator("span"),
+};
+const COPY_ANCHOR_BLOCK = {
+  name: "alink",
+  indicator: "Copy link text",
+  customSelectors: ["a"],
+  linkActivator: copyElementTextActivator("link"),
+};
+const COPY_ANY_BLOCK = {
+  name: "any",
+  indicator: "Copy element",
+  // Union of existing selector groups (anchor, span, paragraph, code family).
+  customSelectors: [
+    "a",
+    "span",
+    "p",
+    "pre",
+    "code",
+    ".hljs",
+    "div.highlight pre",
+    "div.highlight code",
+    "[data-code-block]",
+  ],
+  linkActivator: copyElementTextActivator("element"),
+};
+
 const availableModes = [
   OPEN_IN_CURRENT_TAB,
   OPEN_IN_NEW_BG_TAB,
@@ -157,6 +221,11 @@ const availableModes = [
   COPY_LINK_TEXT,
   HOVER_LINK,
   FOCUS_LINK,
+  COPY_CODE_BLOCK,
+  COPY_PARAGRAPH_BLOCK,
+  COPY_SPAN_BLOCK,
+  COPY_ANCHOR_BLOCK,
+  COPY_ANY_BLOCK,
 ];
 
 const HintCoordinator = {
@@ -222,14 +291,19 @@ const HintCoordinator = {
   getHintDescriptors({ modeIndex, requestedByHelpDialog }, _sender) {
     if (!DomUtils.isReady() || DomUtils.windowIsTooSmall()) return [];
 
-    const requireHref = [COPY_LINK_URL, OPEN_INCOGNITO].includes(availableModes[modeIndex]);
+    const mode = availableModes[modeIndex];
+    const requireHref = [COPY_LINK_URL, OPEN_INCOGNITO].includes(mode);
     // If link hints is launched within the help dialog, then we only offer hints from that frame.
     // This improves the usability of the help dialog on the options page (particularly for
     // selecting command names).
     if (requestedByHelpDialog && !globalThis.isVimiumHelpDialog) {
       this.localHints = [];
     } else {
-      this.localHints = LocalHints.getLocalHints(requireHref);
+      if (mode.customSelectors) {
+        this.localHints = LocalHints.getHintsForSelectors(mode.customSelectors);
+      } else {
+        this.localHints = LocalHints.getLocalHints(requireHref);
+      }
     }
     this.localHintDescriptors = this.localHints.map(({ linkText }, localIndex) => (
       new HintDescriptor({
@@ -484,6 +558,52 @@ class LinkHintsMode {
       // Note that Vimium's CSS is user-customizable. We're adding the "vimiumHintMarker" class here
       // for users to customize. See further comments about this in vimium.css.
       el.className = "vimium-reset internal-vimium-hint-marker vimiumHintMarker";
+
+      // Classify the element so we can style different hint types differently (buttons, links,
+      // external links). We only attach these classes for local markers actually rendered here.
+      try {
+        const target = localHint.element;
+        if (target) {
+          const tag = target.tagName?.toLowerCase?.() || "";
+          const role = target.getAttribute?.("role")?.toLowerCase?.();
+          let typeClass = null;
+
+          // Helper to decide if an <a> is external (different domain).
+          const classifyAnchor = () => {
+            if (!target.href) return "vimium-hint-type-link"; // No href => treat as normal link.
+            let linkHostname;
+            try {
+              linkHostname = new URL(target.href, document.baseURI).hostname || "";
+            } catch (_) {
+              linkHostname = ""; // Malformed; treat as same-domain link.
+            }
+            const norm = (h) => h.replace(/^www\./, "");
+            if (linkHostname && norm(linkHostname) && norm(linkHostname) !== norm(location.hostname || "")) {
+              return "vimium-hint-type-external";
+            }
+            return "vimium-hint-type-link";
+          };
+
+          if (
+            tag === "button" ||
+            (tag === "input" && ["button", "submit", "reset"].includes((target.getAttribute("type") || "").toLowerCase())) ||
+            role === "button"
+          ) {
+            typeClass = "vimium-hint-type-button";
+          } else if (tag === "a" || role === "link") {
+            typeClass = classifyAnchor();
+          } else if (target.href && tag !== "area") { // Generic clickable with href (e.g. <div role=link>
+            typeClass = classifyAnchor();
+          }
+
+            // Apply class if determined.
+          if (typeClass) {
+            el.classList.add(typeClass);
+          }
+        }
+      } catch (_) {
+        // Swallow any classification errors; hint rendering must not break.
+      }
       Object.assign(marker, {
         element: el,
         localHint,
@@ -1554,4 +1674,36 @@ Object.assign(globalThis, {
   AlphabetHints,
   FilterHints,
   WaitForEnter,
+  COPY_CODE_BLOCK,
+  COPY_PARAGRAPH_BLOCK,
+  COPY_SPAN_BLOCK,
+  COPY_ANCHOR_BLOCK,
+  COPY_ANY_BLOCK,
 });
+// Generic selector-based helper for custom copy modes.
+LocalHints.getHintsForSelectors = function (selectors) {
+  if (!document.documentElement) return [];
+  let elements = [];
+  try {
+    elements = selectors.flatMap((sel) => Array.from(document.querySelectorAll(sel)));
+  } catch (_) {
+    return [];
+  }
+  elements = elements.filter((el) => !elements.some((other) => (other !== el) && other.contains(el)));
+  const hints = [];
+  const { top: viewportTop, left: viewportLeft } = DomUtils.getViewportTopLeft();
+  for (const el of elements) {
+    const rect = DomUtils.getVisibleClientRect(el, true);
+    if (!rect) continue;
+    if (rect.width < 10 || rect.height < 10) continue;
+    let text = (el.innerText || el.textContent || "").trim();
+    if (!text) continue;
+    let caption = text.split(/\n/)[0];
+    if (caption.length > 80) caption = caption.slice(0, 77) + "...";
+    // Adjust to document coordinates (LinkHints expects rect relative to full document, not viewport).
+    rect.top += viewportTop;
+    rect.left += viewportLeft;
+    hints.push(new LocalHint({ element: el, rect, linkText: caption, showLinkText: true }));
+  }
+  return hints;
+};
